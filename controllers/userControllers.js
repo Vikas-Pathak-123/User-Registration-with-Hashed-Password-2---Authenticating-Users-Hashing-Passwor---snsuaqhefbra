@@ -1,4 +1,5 @@
 const users   =require("../models/user.js");
+const bcrypt = require('bcrypt');
 
 
 /*
@@ -24,6 +25,35 @@ Post request json file structure
 const registerUser =async (req, res) => {
 
     //write your code here
+     try {
+    const { name, email, password, DOB} = req.body;
+    
+    // Check if user with given email already exists
+    const existingUser = await users.findOne({ email });
+    if (existingUser) {
+      return res.status(404).send("User validation failed: email: Email already exists");
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const user = new users({ name, email, password: hashedPassword , DOB});
+    await user.save();
+
+    // Return _id of the registered user
+    res.status(200).send(user._id);
+  } catch (error) {
+    if (error.name === "MongoError" && error.code === 11000) {
+      res
+        .status(404)
+        .send("User validation failed: email: Email already exists");
+    } else {
+      res
+        .status(404)
+        .send("User validation failed: email: Email already exists");
+    }
+  }
 
 }
 
